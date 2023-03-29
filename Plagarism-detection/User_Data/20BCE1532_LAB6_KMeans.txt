@@ -1,0 +1,109 @@
+from google.colab import drive
+drive.mount('/drive')
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+%matplotlib inline
+
+from sklearn import metrics
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+df = pd.read_csv('/drive/My Drive/Colab Notebooks/Country-data.csv')
+dict_df = pd.read_csv('/drive/My Drive/Colab Notebooks/data-dictionary.csv')
+
+df.head()
+
+dict_df.head()
+
+df.shape
+
+df.info()
+print(50*'-')
+dict_df.info()
+
+df.describe()
+
+df.isnull().sum()
+
+dict_df.isnull().sum()
+
+# number of countries
+df['country'].nunique()
+
+# for unsupervied learning we dont need the country column so droping it
+data=df.drop(['country'],axis=1)
+
+data.head()
+
+#correlation heatmap 
+corr_matrix=data.corr()
+sns.heatmap(corr_matrix,annot=True)
+
+sns.pairplot(df)
+
+#scaling data
+scaling=StandardScaler()
+scaled=scaling.fit_transform(data)
+
+scaled_df=pd.DataFrame(scaled,columns=data.columns)
+
+# princt scaled dataset
+scaled_df.head()
+
+# plot elbow curve
+
+a=[]
+K=range(1,10)
+for i in K:
+    kmean=KMeans(n_clusters=i)
+    kmean.fit(data)
+    a.append(kmean.inertia_)
+    
+plt.plot(K,a,marker='o')
+plt.title('Elbow Method',fontsize=15)
+plt.xlabel('Number of clusters',fontsize=15)
+plt.ylabel('Sum of Squared distance',fontsize=15)
+plt.show()
+
+#chosing no. of clusters as 3 and refitting kmeans model
+kmeans = KMeans(n_clusters = 3,random_state = 111)
+kmeans.fit(scaled_df)
+
+#count number of records in every cluster
+pd.Series(kmeans.labels_).value_counts()
+
+#predicting values
+cluster_labels = kmeans.fit_predict(scaled_df)
+
+preds = kmeans.labels_
+kmeans_df = pd.DataFrame(df)
+kmeans_df['KMeans_Clusters'] = preds
+kmeans_df.head(10)
+
+#visulization of clusters child mortality vs gdpp
+sns.scatterplot(x = 'child_mort',y = 'gdpp',hue='KMeans_Clusters',data=kmeans_df) 
+plt.title("Child Mortality vs gdpp", fontsize=15)
+plt.xlabel("Child Mortality", fontsize=12)
+plt.ylabel("gdpp", fontsize=12)
+plt.show()
+
+#visulization of clusters inflation vs gdpp
+sns.scatterplot(x = kmeans_df['inflation'],y = kmeans_df['gdpp'],hue='KMeans_Clusters',data=kmeans_df) 
+plt.title("inflation vs gdpp", fontsize=15)
+plt.xlabel("inflation", fontsize=12)
+plt.ylabel("gdpp", fontsize=12)
+plt.show()
+
+#find number of developed country,developing country,under-developed country
+under_developing=kmeans_df[kmeans_df['KMeans_Clusters']==0]['country']
+developing=kmeans_df[kmeans_df['KMeans_Clusters']==1]['country']
+developed=kmeans_df[kmeans_df['KMeans_Clusters']==2]['country']
+
+print("Number of deveoped countries",len(under_developing))
+print("Number of developing countries",len(developing))
+print("Number of under-developing countries",len(developed))
+
+
