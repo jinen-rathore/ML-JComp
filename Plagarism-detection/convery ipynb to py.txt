@@ -1,6 +1,0 @@
-At the end of jupyter code add this command:
-!jupyter nbconvert --to script YourNotebookName.ipynb
-
-To Batch convert jupyter notebooks files to python files:
-in command line:
-jupyter nbconvert --to script *.ipynb
